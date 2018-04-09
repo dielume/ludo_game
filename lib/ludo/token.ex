@@ -1,7 +1,7 @@
 defmodule Ludo.Token do
   alias __MODULE__
-  @enforced_keys [:position, :counter, :number]
-  defstruct [:position, :counter, :number]
+  @enforce_keys [:position, :counter, :number]
+  defstruct @enforce_keys 
   @types ~w(one two three four)
 
   @max_counter 45
