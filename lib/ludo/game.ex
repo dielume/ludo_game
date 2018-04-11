@@ -13,13 +13,51 @@ defmodule Ludo.Game do
 
   def via_tuple(name), do: {:via, Registry, {Registry.Game, name}}
 
-  def add_player(game, name) when is_binary(name), do:
-    GenServer.call(game, {:add_player, name})
+  def add_player_2(game, name) when is_binary(name), do:
+    GenServer.call(game, {:add_player_2, name})
 
-  def handle_call({:add_player, name}, _from, state_data) do
-    review_players(state_data)
-    {:reply, :ok, state_data, @timeout}
+  def add_player_3(game, name) when is_binary(name), do:
+    GenServer.call(game, {:add_player_3, name})
+
+  def add_player_4(game, name) when is_binary(name), do:
+    GenServer.call(game, {:add_player_4, name})
+
+  def handle_call({:add_player_2, name}, _from, state_data) do
+    with {:ok, rules} <- Rules.check(state_data.rules, :add_player_2)
+    do
+      state_data
+      |> update_player2_name(name)
+      |> update_rules(rules)
+      |> reply_success(:ok)
+    else
+    :error -> {:reply, :error, state_data}
+    end
   end
+
+  def handle_call({:add_player_3, name}, _from, state_data) do
+    with {:ok, rules} <- Rules.check(state_data.rules, :add_player_3)
+    do
+      state_data
+      |> update_player3_name(name)
+      |> update_rules(rules)
+      |> reply_success(:ok)
+    else
+    :error -> {:reply, :error, state_data}
+    end
+  end
+
+  def handle_call({:add_player_4, name}, _from, state_data) do
+    with {:ok, rules} <- Rules.check(state_data.rules, :add_player_4)
+    do
+      state_data
+      |> update_player4_name(name)
+      |> update_rules(rules)
+      |> reply_success(:ok)
+    else
+    :error -> {:reply, :error, state_data}
+    end
+  end
+
 
   defp fresh_state(name) do
     player1 = %{name: name, tokens: Token.new()}
@@ -30,41 +68,17 @@ defmodule Ludo.Game do
     player4: player4, rules: %Rules{}}
   end
 
-  defp review_players(state_data) do
-    with {:ok, player2} <- player_exist?(state_data, :player2),
-      {:ok, player3} <- player_exist?(state_data, :player3),
-      {:ok, player4} <- player_exist?(state_data, :player4)
-    do
-      {:ok, state_data}
-    else
-      {:missing_player2, player2} -> player2,
-      {:missing_player3, player3} -> player3,
-      {:missing_player4, player4} -> player4
-
-    end
+  defp update_player2_name(state_data, name), do:
+    put_in(state_data.player2.name, name)
+  defp update_player3_name(state_data, name), do:
+    put_in(state_data.player3.name, name)
+  defp update_player4_name(state_data, name), do:
+    put_in(state_data.player4.name, name)
+  defp update_rules(state_data, rules), do:
+    %{state_data | rules: rules}
+  defp reply_success(state_data, reply) do
+    # :ets.insert(:game_state,{state_data.player1.name, state_data})
+    {:reply, reply, state_data, @timeout}
   end
-
-  defp player_exist?(state_data, :player2) do
-    if state_data.player2.name do
-      {:ok, state_data.player2}
-    else
-      {:missing_player2, state_data.player2}
-    end
-  end
-  defp player_exist?(state_data, :player3) do
-    if state_data.player3.name do
-      {:ok, state_data.player3}
-    else
-      {:missing_player3, state_data.player3}
-    end
-  end
-  defp player_exist?(state_data, :player4) do
-    if state_data.player4.name do
-      {:ok, state_data.player4}
-    else
-      {:missing_player4, state_data.player4}
-    end
-  end
-
 
 end
