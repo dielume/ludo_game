@@ -1,7 +1,7 @@
 defmodule Ludo.Token do
   alias __MODULE__
   @enforce_keys [:position, :counter, :number]
-  defstruct @enforce_keys 
+  defstruct @enforce_keys
   @types ~w(one two three four)
 
   @max_counter 45
@@ -11,7 +11,7 @@ defmodule Ludo.Token do
   end
 
   def add_counter(tokens, number, offset) do
-    with {:ok, token = %Token{}} <- valid_token_number(tokens, number),
+    with {:ok, %Token{} = token} <- valid_token_number(tokens, number),
       {:ok, final_token} <- valid_counter(token, offset) do
         final_token
     else
