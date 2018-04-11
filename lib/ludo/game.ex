@@ -5,6 +5,7 @@ defmodule Ludo.Game do
   @players [:player1, :player2, :player3, :player4]
 
   def init(name) do
+    send(self(), {:set_state, name})
     {:ok, fresh_state(name)}
   end
 
@@ -58,12 +59,33 @@ defmodule Ludo.Game do
     end
   end
 
+  def handle_info(:timeout, state_data) do
+  {:stop, {:shutdown, :timeout}, state_data}
+  end
+
+  def handle_info({:set_state, name}, _state_data) do
+    state_data =
+    case :ets.lookup(:game_state, name)  do
+      [] -> fresh_state(name)
+      [{_key, state}] -> state
+    end
+    :ets.insert(:game_state, {name, state_data})
+    {:noreply, state_data, @timeout}
+  end
+
+  def terminate({:shutdown, :timeout}, state_data) do
+    :ets.delete(:game_state, state_data.player1.name)
+    :ok
+  end
+
+  def terminate(_reason, _state), do: :ok
+
 
   defp fresh_state(name) do
-    player1 = %{name: name, tokens: Token.new()}
-    player2 = %{name: nil, tokens: Token.new()}
-    player3 = %{name: nil, tokens: Token.new()}
-    player4 = %{name: nil, tokens: Token.new()}
+    player1 = %{name: name, tokens: Token.new(:player1)}
+    player2 = %{name: nil, tokens: Token.new(:player2)}
+    player3 = %{name: nil, tokens: Token.new(:player3)}
+    player4 = %{name: nil, tokens: Token.new(:player4)}
     %{player1: player1, player2: player2, player3: player3,
     player4: player4, rules: %Rules{}}
   end
@@ -77,7 +99,7 @@ defmodule Ludo.Game do
   defp update_rules(state_data, rules), do:
     %{state_data | rules: rules}
   defp reply_success(state_data, reply) do
-    # :ets.insert(:game_state,{state_data.player1.name, state_data})
+    :ets.insert(:game_state,{state_data.player1.name, state_data})
     {:reply, reply, state_data, @timeout}
   end
 

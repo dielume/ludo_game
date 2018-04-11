@@ -6,9 +6,30 @@ defmodule Ludo.Token do
 
   @max_counter 45
 
-  def new() do
-    Enum.map(@types, fn type -> %Token{position: 0, counter: 0, number: type} end)
+  def new(:player1) do
+    loop_token(@types, 1)
   end
+
+  def new(:player2) do
+    loop_token(@types, 11)
+  end
+
+  def new(:player3) do
+    loop_token(@types, 21)
+  end
+
+  def new(:player4) do
+    loop_token(@types, 31)
+  end
+
+  defp loop_token([], _offset), do: []
+
+  defp loop_token(tokens, offset) do
+    [head | tail] = tokens
+    head = %Token{position: offset, counter: 0, number: head}
+    [head | loop_token(tail, offset)]
+  end
+
 
   def add_counter(tokens, number, offset) do
     with {:ok, %Token{} = token} <- valid_token_number(tokens, number),

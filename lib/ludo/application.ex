@@ -8,7 +8,8 @@ defmodule Ludo.Application do
   def start(_type, _args) do
     # List all child processes to be supervised
     children = [
-      {Registry, keys: :unique, name: Registry.Game}
+      {Registry, keys: :unique, name: Registry.Game},
+      Ludo.GameSupervisor
       # Starts a worker by calling: Ludo.Worker.start_link(arg)
       # {Ludo.Worker, arg},
     ]
