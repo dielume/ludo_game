@@ -1,8 +1,8 @@
 defmodule Ludo.Game do
-  alias Ludo.{Rules, Token, Dice}
+  alias Ludo.{Rules, Token, Dice, Board}
   use GenServer, start: {__MODULE__, :start_link, []}, restart: :transient
   @timeout 60 * 60 * 24 * 1000
-  @players [:player1, :player2, :player3, :player4]
+  # @players [:player1, :player2, :player3, :player4]
 
   def init(name) do
     send(self(), {:set_state, name})
@@ -22,6 +22,18 @@ defmodule Ludo.Game do
 
   def add_player_4(game, name) when is_binary(name), do:
     GenServer.call(game, {:add_player_4, name})
+
+  def player_1_turn(game, number) when is_binary(number), do:
+    GenServer.call(game, {:player_1_turn, number})
+
+  def player_2_turn(game, number) when is_binary(number), do:
+    GenServer.call(game, {:player_2_turn, number})
+
+  def player_3_turn(game, number) when is_binary(number), do:
+    GenServer.call(game, {:player_3_turn, number})
+
+  def player_4_turn(game, number) when is_binary(number), do:
+    GenServer.call(game, {:player_4_turn, number})
 
   def handle_call({:add_player_2, name}, _from, state_data) do
     with {:ok, rules} <- Rules.check(state_data.rules, :add_player_2)
@@ -62,12 +74,60 @@ defmodule Ludo.Game do
   def handle_call({:player_1_turn, number}, _from, state_data) do
     with {:ok, rules} <- Rules.check(state_data.rules, :player_1_turn),
          {_dice1, _dice2, dice_sum} <- Dice.throw(),
-         {:ok, new_token}<- Token.add_counter(state_data.player1.tokens, number, dice_sum),
-         win_status <- Board.win?(new_token),
+         {:ok, new_tokens}<- Token.add_counter_position(state_data.player1.tokens, number, dice_sum),
+         win_status <- Board.win?(new_tokens),
          {:ok, rules} <- Rules.check(rules, {:win_check, win_status})
     do
       state_data
-      |> update_player_1_token(new_token)
+      |> update_player_1_token(new_tokens)
+      |> update_rules(rules)
+      |> reply_success(:ok)
+    else
+      :error -> {:reply, :error, state_data}
+    end
+  end
+
+  def handle_call({:player_2_turn, number}, _from, state_data) do
+    with {:ok, rules} <- Rules.check(state_data.rules, :player_2_turn),
+         {_dice1, _dice2, dice_sum} <- Dice.throw(),
+         {:ok, new_tokens}<- Token.add_counter_position(state_data.player1.tokens, number, dice_sum),
+         win_status <- Board.win?(new_tokens),
+         {:ok, rules} <- Rules.check(rules, {:win_check, win_status})
+    do
+      state_data
+      |> update_player_2_token(new_tokens)
+      |> update_rules(rules)
+      |> reply_success(:ok)
+    else
+      :error -> {:reply, :error, state_data}
+    end
+  end
+
+  def handle_call({:player_3_turn, number}, _from, state_data) do
+    with {:ok, rules} <- Rules.check(state_data.rules, :player_3_turn),
+         {_dice1, _dice2, dice_sum} <- Dice.throw(),
+         {:ok, new_tokens}<- Token.add_counter_position(state_data.player1.tokens, number, dice_sum),
+         win_status <- Board.win?(new_tokens),
+         {:ok, rules} <- Rules.check(rules, {:win_check, win_status})
+    do
+      state_data
+      |> update_player_3_token(new_tokens)
+      |> update_rules(rules)
+      |> reply_success(:ok)
+    else
+      :error -> {:reply, :error, state_data}
+    end
+  end
+
+  def handle_call({:player_4_turn, number}, _from, state_data) do
+    with {:ok, rules} <- Rules.check(state_data.rules, :player_4_turn),
+         {_dice1, _dice2, dice_sum} <- Dice.throw(),
+         {:ok, new_tokens}<- Token.add_counter_position(state_data.player1.tokens, number, dice_sum),
+         win_status <- Board.win?(new_tokens),
+         {:ok, rules} <- Rules.check(rules, {:win_check, win_status})
+    do
+      state_data
+      |> update_player_4_token(new_tokens)
       |> update_rules(rules)
       |> reply_success(:ok)
     else
@@ -114,21 +174,16 @@ defmodule Ludo.Game do
     put_in(state_data.player3.name, name)
   defp update_player_4_name(state_data, name), do:
     put_in(state_data.player4.name, name)
-  def update_player_1_token(state_data, new_token) do
-    tokens = state_data.player1.tokens
-    new_tokens =
-      tokens
-      |> Enum.map(&match_number_update(&1, new_token))
+  def update_player_1_token(state_data, new_tokens), do:
     put_in(state_data.player1.tokens, new_tokens)
-  end
+  def update_player_2_token(state_data, new_tokens), do:
+    put_in(state_data.player2.tokens, new_tokens)
+  def update_player_3_token(state_data, new_tokens), do:
+    put_in(state_data.player3.tokens, new_tokens)
+  def update_player_4_token(state_data, new_tokens), do:
+    put_in(state_data.player4.tokens, new_tokens)
 
-  defp match_number_update(%Token{} = token, new_token) do
-    if token.number == new_token.number do
-      new_token
-    else
-      token
-    end
-  end
+
 
   defp update_rules(state_data, rules), do:
     %{state_data | rules: rules}

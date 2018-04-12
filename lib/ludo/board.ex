@@ -1,12 +1,11 @@
 defmodule Ludo.Board do
-  alias __MODULE__
 
   def new do
     %{}
   end
 
-  def win?(player) do
-    case Enum.all?(player.tokens, fn token -> token.counter == 45 end) do
+  def win?(tokens) do
+    case Enum.all?(tokens, fn token -> token.counter == 45 end) do
       true -> :win
       false -> :no_win
     end

@@ -32,11 +32,22 @@ defmodule Ludo.Token do
 
 
   def add_counter_position(tokens, number, offset) do
-    with {:ok, %Token{} = token} <- valid_token_number(tokens, number),
-         {:ok, counter_token} <- valid_counter(token, offset),
+    {:ok, tokens |> Enum.map(&match_number_update(&1, number, offset))}
+  end
+
+  defp match_number_update(%Token{} = token, number, offset) do
+    if token.number == number do
+      add_counter_position_one(token, offset)
+    else
+      token
+    end
+  end
+
+  defp add_counter_position_one(token, offset) do
+    with {:ok, counter_token} <- valid_counter(token, offset),
          {:ok, final_token} <- valid_position(counter_token, offset)
     do
-      {:ok, final_token}
+      final_token
     else
       error -> {:error, error}
     end
@@ -53,12 +64,12 @@ defmodule Ludo.Token do
     end
   end
 
-  defp valid_token_number(tokens, number) do
-    case Enum.find(tokens, fn token -> token.number == number end) do
-      token = %Token{} -> {:ok ,token}
-      nil -> {:error, :invalid_token}
-    end
-  end
+  # defp valid_token_number(tokens, number) do
+  #   case Enum.find(tokens, fn token -> token.number == number end) do
+  #     token = %Token{} -> {:ok ,token}
+  #     nil -> {:error, :invalid_token}
+  #   end
+  # end
 
   defp valid_counter(%Token{} = token, offset) do
     cond do

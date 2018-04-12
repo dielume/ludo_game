@@ -17,16 +17,47 @@ defmodule Ludo.Rules do
   end
 
   def check(%Rules{state: :player_1_turn} = rules, :player_1_turn) do
-    {:ok, %Rules{rules | state: :player_2_turn}}
+    {:ok, %Rules{rules | state: :player_1_win?}}
   end
-
-  def check(%Rules{state: :player_1_turn} = rules, {:win_check, win_status}) do
+  def check(%Rules{state: :player_1_win?} = rules, {:win_check, win_status}) do
     case win_status do
-      :no_win -> {:ok, rules}
+      :no_win -> {:ok, %Rules{rules | state: :player_2_turn}}
       :win -> {:ok, %Rules{rules | state: :game_over}}
     end
-
   end
+
+  def check(%Rules{state: :player_2_turn} = rules, :player_2_turn) do
+    {:ok, %Rules{rules | state: :player_2_win?}}
+  end
+  def check(%Rules{state: :player_2_win?} = rules, {:win_check, win_status}) do
+    case win_status do
+      :no_win -> {:ok, %Rules{rules | state: :player_3_turn}}
+      :win -> {:ok, %Rules{rules | state: :game_over}}
+    end
+  end
+
+  def check(%Rules{state: :player_3_turn} = rules, :player_3_turn) do
+    {:ok, %Rules{rules | state: :player_3_win?}}
+  end
+
+  def check(%Rules{state: :player_3_win?} = rules, {:win_check, win_status}) do
+    case win_status do
+      :no_win -> {:ok, %Rules{rules | state: :player_4_turn}}
+      :win -> {:ok, %Rules{rules | state: :game_over}}
+    end
+  end
+
+  def check(%Rules{state: :player_4_turn} = rules, :player_4_turn) do
+    {:ok, %Rules{rules | state: :player_4_win?}}
+  end
+  def check(%Rules{state: :player_4_win?} = rules, {:win_check, win_status}) do
+    case win_status do
+      :no_win -> {:ok, %Rules{rules | state: :player_1_turn}}
+      :win -> {:ok, %Rules{rules | state: :game_over}}
+    end
+  end
+
+
   # rules, {:win_check, win_status}
 
 
