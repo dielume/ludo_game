@@ -31,12 +31,25 @@ defmodule Ludo.Token do
   end
 
 
-  def add_counter(tokens, number, offset) do
+  def add_counter_position(tokens, number, offset) do
     with {:ok, %Token{} = token} <- valid_token_number(tokens, number),
-      {:ok, final_token} <- valid_counter(token, offset) do
-        final_token
+         {:ok, counter_token} <- valid_counter(token, offset),
+         {:ok, final_token} <- valid_position(counter_token, offset)
+    do
+      {:ok, final_token}
     else
-      error -> error
+      error -> {:error, error}
+    end
+  end
+
+  defp valid_position(%Token{} = token, offset) do
+    cond do
+      token.position + offset > 40 ->
+        {:ok, %Token{token | position: token.position + offset - 40}}
+      token.position + offset <=  40 ->
+        {:ok, %Token{token | position: token.position + offset}}
+      true ->
+        {:error, :invalid_counter}
     end
   end
 
@@ -47,11 +60,14 @@ defmodule Ludo.Token do
     end
   end
 
-  defp valid_counter(token, offset) do
-    if token.counter + offset <= @max_counter do
-      {:ok, %Token{token | counter: token.counter + offset}}
-    else
-      {:error, :invalid_counter}
+  defp valid_counter(%Token{} = token, offset) do
+    cond do
+      token.counter + offset <= @max_counter ->
+        {:ok, %Token{token | counter: token.counter + offset}}
+      token.counter + offset > @max_counter ->
+        {:ok, %Token{token | counter: @max_counter}}
+      true ->
+        {:error, :invalid_counter}
     end
   end
 

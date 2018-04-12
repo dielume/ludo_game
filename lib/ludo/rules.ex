@@ -13,17 +13,25 @@ defmodule Ludo.Rules do
   end
 
   def check(%Rules{state: :waiting_player_4} = rules, :add_player_4) do
-    {:ok, %Rules{rules | state: :player1_turn, player4: :set}}
+    {:ok, %Rules{rules | state: :player_1_turn, player4: :set}}
   end
+
+  def check(%Rules{state: :player_1_turn} = rules, :player_1_turn) do
+    {:ok, %Rules{rules | state: :player_2_turn}}
+  end
+
+  def check(%Rules{state: :player_1_turn} = rules, {:win_check, win_status}) do
+    case win_status do
+      :no_win -> {:ok, rules}
+      :win -> {:ok, %Rules{rules | state: :game_over}}
+    end
+
+  end
+  # rules, {:win_check, win_status}
 
 
   def check(_state, _action), do: :error
 
-
-
-  # def check(%Rules{state: :player_set} = rules, {:all_player_ready, board) do
-  #
-  # end
 
 
 end

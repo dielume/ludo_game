@@ -1,5 +1,5 @@
 defmodule Ludo.Game do
-  alias Ludo.{Rules, Token}
+  alias Ludo.{Rules, Token, Dice}
   use GenServer, start: {__MODULE__, :start_link, []}, restart: :transient
   @timeout 60 * 60 * 24 * 1000
   @players [:player1, :player2, :player3, :player4]
@@ -27,7 +27,7 @@ defmodule Ludo.Game do
     with {:ok, rules} <- Rules.check(state_data.rules, :add_player_2)
     do
       state_data
-      |> update_player2_name(name)
+      |> update_player_2_name(name)
       |> update_rules(rules)
       |> reply_success(:ok)
     else
@@ -39,7 +39,7 @@ defmodule Ludo.Game do
     with {:ok, rules} <- Rules.check(state_data.rules, :add_player_3)
     do
       state_data
-      |> update_player3_name(name)
+      |> update_player_3_name(name)
       |> update_rules(rules)
       |> reply_success(:ok)
     else
@@ -51,13 +51,30 @@ defmodule Ludo.Game do
     with {:ok, rules} <- Rules.check(state_data.rules, :add_player_4)
     do
       state_data
-      |> update_player4_name(name)
+      |> update_player_4_name(name)
       |> update_rules(rules)
       |> reply_success(:ok)
     else
     :error -> {:reply, :error, state_data}
     end
   end
+
+  def handle_call({:player_1_turn, number}, _from, state_data) do
+    with {:ok, rules} <- Rules.check(state_data.rules, :player_1_turn),
+         {_dice1, _dice2, dice_sum} <- Dice.throw(),
+         {:ok, new_token}<- Token.add_counter(state_data.player1.tokens, number, dice_sum),
+         win_status <- Board.win?(new_token),
+         {:ok, rules} <- Rules.check(rules, {:win_check, win_status})
+    do
+      state_data
+      |> update_player_1_token(new_token)
+      |> update_rules(rules)
+      |> reply_success(:ok)
+    else
+      :error -> {:reply, :error, state_data}
+    end
+  end
+
 
   def handle_info(:timeout, state_data) do
   {:stop, {:shutdown, :timeout}, state_data}
@@ -90,12 +107,29 @@ defmodule Ludo.Game do
     player4: player4, rules: %Rules{}}
   end
 
-  defp update_player2_name(state_data, name), do:
+
+  defp update_player_2_name(state_data, name), do:
     put_in(state_data.player2.name, name)
-  defp update_player3_name(state_data, name), do:
+  defp update_player_3_name(state_data, name), do:
     put_in(state_data.player3.name, name)
-  defp update_player4_name(state_data, name), do:
+  defp update_player_4_name(state_data, name), do:
     put_in(state_data.player4.name, name)
+  def update_player_1_token(state_data, new_token) do
+    tokens = state_data.player1.tokens
+    new_tokens =
+      tokens
+      |> Enum.map(&match_number_update(&1, new_token))
+    put_in(state_data.player1.tokens, new_tokens)
+  end
+
+  defp match_number_update(%Token{} = token, new_token) do
+    if token.number == new_token.number do
+      new_token
+    else
+      token
+    end
+  end
+
   defp update_rules(state_data, rules), do:
     %{state_data | rules: rules}
   defp reply_success(state_data, reply) do
